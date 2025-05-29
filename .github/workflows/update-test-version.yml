@@ -34,8 +34,14 @@ jobs:
           echo "$VERSION" > test_version.txt
           echo "Generated version: $VERSION"
 
-      - name: Upload version file as artifact (optional)
+      - name: Upload test_version.txt as artifact
         uses: actions/upload-artifact@v4
         with:
           name: test_version
           path: test_version.txt
+
+      - name: Upload full repository as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: full_repo_snapshot
+          path: ./
