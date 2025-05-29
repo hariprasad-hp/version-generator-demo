@@ -9,44 +9,34 @@ jobs:
   generate-version:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository (with full history)
+      - name: Checkout repository with full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: main
 
-      - name: Generate 8-digit Test Version File (no commit)
+      - name: Generate dynamic 8-digit version
+        id: version
         run: |
           DATE=$(date +'%y%m%d')
-          VERSION_FILE="test_version.txt"
           TODAY=$(date +'%Y-%m-%d')
 
-          # Get latest commit date on main in YYYY-MM-DD
           LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y-%m-%d')
 
           if [ "$LAST_COMMIT_DATE" = "$TODAY" ]; then
-            if [ -f "$VERSION_FILE" ]; then
-              LAST_VERSION=$(cat $VERSION_FILE)
-              LAST_DATE=${LAST_VERSION:0:6}
-              LAST_COUNT=${LAST_VERSION:6:2}
-
-              if [ "$LAST_DATE" = "$DATE" ]; then
-                COUNT=$(printf "%02d" $((10#$LAST_COUNT + 1)))
-                VERSION="${DATE}${COUNT}"
-              else
-                VERSION="${DATE}01"
-              fi
-            else
-              VERSION="${DATE}01"
-            fi
+            COUNT=$(git log --since=midnight --pretty=oneline | wc -l)
+            VERSION="${DATE}$(printf "%02d" $COUNT)"
           else
             VERSION="${DATE}01"
           fi
 
-          echo "$VERSION" > test_version.txt
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "✅ Generated version: $VERSION"
 
-      - name: Zip entire repository as dab-compliance-suite.zip
+      - name: Display generated version
+        run: echo "Generated version: ${{ steps.version.outputs.version }}"
+
+      - name: Zip the entire repository
         run: |
           zip -r dab-compliance-suite.zip . -x ".git/*"
 
@@ -55,9 +45,3 @@ jobs:
         with:
           name: dab-compliance-suite
           path: dab-compliance-suite.zip
-
-      - name: Upload test_version.txt as separate artifact (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: test_version
-          path: test_version.txt
