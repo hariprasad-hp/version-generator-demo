@@ -12,24 +12,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Fetch Full Git History
-        run: |
-          git fetch --all
-
       - name: Generate 8-digit Test Version File (no commit)
         run: |
           DATE=$(date +'%y%m%d')
           VERSION_FILE="test_version.txt"
-
-          # Get last committed version from origin/main if it exists
-          LAST_VERSION=$(git show origin/main:$VERSION_FILE 2>/dev/null || echo "")
+          TODAY=$(date +'%Y-%m-%d')
           
-          if [ -n "$LAST_VERSION" ]; then
-            LAST_DATE=${LAST_VERSION:0:6}
-            LAST_COUNT=${LAST_VERSION:6:2}
-            if [ "$LAST_DATE" = "$DATE" ]; then
-              COUNT=$(printf "%02d" $((10#$LAST_COUNT + 1)))
-              VERSION="${DATE}${COUNT}"
+          # Get latest commit date on main in YYYY-MM-DD
+          LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y-%m-%d')
+
+          if [ "$LAST_COMMIT_DATE" = "$TODAY" ]; then
+            if [ -f "$VERSION_FILE" ]; then
+              LAST_VERSION=$(cat $VERSION_FILE)
+              LAST_DATE=${LAST_VERSION:0:6}
+              LAST_COUNT=${LAST_VERSION:6:2}
+
+              if [ "$LAST_DATE" = "$DATE" ]; then
+                COUNT=$(printf "%02d" $((10#$LAST_COUNT + 1)))
+                VERSION="${DATE}${COUNT}"
+              else
+                VERSION="${DATE}01"
+              fi
             else
               VERSION="${DATE}01"
             fi
@@ -38,7 +41,7 @@ jobs:
           fi
 
           echo "$VERSION" > test_version.txt
-          echo "✅ Generated test version: $VERSION"
+          echo "✅ Generated version: $VERSION"
 
       - name: Zip entire repository as dab-compliance-suite.zip
         run: |
