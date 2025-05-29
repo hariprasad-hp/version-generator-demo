@@ -34,14 +34,12 @@ jobs:
           echo "$VERSION" > test_version.txt
           echo "Generated version: $VERSION"
 
-      - name: Upload test_version.txt as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test_version
-          path: test_version.txt
+      - name: Zip entire repository as dab-compliance-suite.zip
+        run: |
+          zip -r dab-compliance-suite.zip . -x ".git/*"
 
-      - name: Upload full repository as artifact
+      - name: Upload dab-compliance-suite.zip as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: full_repo_snapshot
-          path: ./
+          name: dab-compliance-suite
+          path: dab-compliance-suite.zip
