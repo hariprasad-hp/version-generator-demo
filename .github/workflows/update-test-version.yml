@@ -9,15 +9,18 @@ jobs:
   generate-version:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository (with full history)
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
 
       - name: Generate 8-digit Test Version File (no commit)
         run: |
           DATE=$(date +'%y%m%d')
           VERSION_FILE="test_version.txt"
           TODAY=$(date +'%Y-%m-%d')
-          
+
           # Get latest commit date on main in YYYY-MM-DD
           LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y-%m-%d')
 
@@ -52,3 +55,9 @@ jobs:
         with:
           name: dab-compliance-suite
           path: dab-compliance-suite.zip
+
+      - name: Upload test_version.txt as separate artifact (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_version
+          path: test_version.txt
