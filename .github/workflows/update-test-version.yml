@@ -12,13 +12,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Fetch Full Git History
+        run: |
+          git fetch --all
+
       - name: Generate 8-digit Test Version File (no commit)
         run: |
           DATE=$(date +'%y%m%d')
           VERSION_FILE="test_version.txt"
 
-          if [ -f "$VERSION_FILE" ]; then
-            LAST_VERSION=$(cat $VERSION_FILE)
+          # Get last committed version from origin/main if it exists
+          LAST_VERSION=$(git show origin/main:$VERSION_FILE 2>/dev/null || echo "")
+          
+          if [ -n "$LAST_VERSION" ]; then
             LAST_DATE=${LAST_VERSION:0:6}
             LAST_COUNT=${LAST_VERSION:6:2}
             if [ "$LAST_DATE" = "$DATE" ]; then
@@ -32,7 +38,7 @@ jobs:
           fi
 
           echo "$VERSION" > test_version.txt
-          echo "Generated version: $VERSION"
+          echo "✅ Generated test version: $VERSION"
 
       - name: Zip entire repository as dab-compliance-suite.zip
         run: |
