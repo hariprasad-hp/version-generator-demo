@@ -9,13 +9,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read  # Needed for `gh` API access
+      contents: read  # Required for GitHub CLI API calls
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Install GitHub CLI
-      run: sudo apt-get install gh -y
+      run: |
+        sudo apt update
+        sudo apt install -y curl
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+          sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+          sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt update
+        sudo apt install -y gh
 
     - name: Authenticate GitHub CLI
       run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
@@ -39,7 +49,6 @@ jobs:
         VERSION_STRING="${DATE_CODE}${PADDED_COUNT}"
 
         echo "VERSION_STRING=$VERSION_STRING" >> $GITHUB_OUTPUT
-        echo "VERSION_STRING=$VERSION_STRING"
         echo "$VERSION_STRING" > test_version.txt
 
     - name: Zip repository
