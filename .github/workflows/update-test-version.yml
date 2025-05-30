@@ -13,13 +13,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Restore daily run count from cache
-      id: cache_daily_run
-      uses: actions/cache@v4
-      with:
-        path: .github/.daily_run_count
-        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE || '' }}
-
     - name: Generate version string
       id: versioning
       run: |
@@ -28,19 +21,27 @@ jobs:
         DATE_CODE=$(date +'%y%m%d')
         COUNT_FILE=".github/.daily_run_count"
 
+        # Initialize or increment the count
         RUN_NUM=0
         if [ -f "$COUNT_FILE" ]; then
           RUN_NUM=$(cat "$COUNT_FILE")
         fi
         RUN_NUM=$((RUN_NUM + 1))
-        printf "%s" "$RUN_NUM" > "$COUNT_FILE"
+        echo "$RUN_NUM" > "$COUNT_FILE"
 
+        # Format run number and create version string
         PADDED_RUN=$(printf "%02d" "$RUN_NUM")
         VERSION="${DATE_CODE}${PADDED_RUN}"
 
+        # Output for GitHub Actions
         echo "VERSION_STRING=$VERSION" >> $GITHUB_OUTPUT
-        echo "VERSION_STRING=$VERSION"
-        echo "$TODAY" >> $GITHUB_ENV  # Used for consistent cache key
+        echo "TODAY_DATE=$TODAY" >> $GITHUB_ENV
+
+    - name: Restore daily run count from cache
+      uses: actions/cache@v4
+      with:
+        path: .github/.daily_run_count
+        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
 
     - name: Save test_version.txt
       run: echo "${{ steps.versioning.outputs.VERSION_STRING }}" > test_version.txt
@@ -53,6 +54,7 @@ jobs:
       with:
         name: dab-compliance-suite
         path: dab-compliance-suite.zip
+
 
     - name: Save daily run count to cache
       uses: actions/cache/save@v4
