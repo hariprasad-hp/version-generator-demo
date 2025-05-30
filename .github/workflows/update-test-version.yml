@@ -32,7 +32,7 @@ jobs:
         VERSION_STRING="${DATE_CODE}${PADDED}"
         echo "VERSION_STRING=$VERSION_STRING" >> $GITHUB_OUTPUT
         echo "$VERSION_STRING" > test_version.txt
-        echo "✅ Generated test version: $VERSION_STRING"
+        echo "Generated test version: $VERSION_STRING"
 
     - name: Zip repository
       run: zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
