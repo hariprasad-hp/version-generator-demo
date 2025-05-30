@@ -8,46 +8,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install GitHub CLI
-      run: |
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-        sudo apt-add-repository https://cli.github.com/packages
-        sudo apt update
-        sudo apt install gh -y
-
-    - name: Authenticate GitHub CLI
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: echo $GH_TOKEN | gh auth login --with-token
-
-    - name: Generate version string based on daily push count
+    - name: Get today’s push count from git log
       id: version
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         TODAY=$(date +'%Y-%m-%d')
-        REPO="${{ github.repository }}"
-
-        COUNT=$(gh api repos/$REPO/commits \
-          -f sha=main \
-          -f since="${TODAY}T00:00:00Z" \
-          -f until="${TODAY}T23:59:59Z" \
-          --jq 'length')
-
-        INCREMENTED=$(($COUNT + 1))
-        PADDED=$(printf "%02d" "$INCREMENTED")
         DATE_CODE=$(date +'%y%m%d')
-        VERSION="${DATE_CODE}${PADDED}"
 
-        echo "VERSION_STRING=$VERSION" >> $GITHUB_OUTPUT
-        echo "$VERSION" > test_version.txt
+        # Fetch full history just in case shallow clone is used
+        git fetch --unshallow || true
+
+        # Count commits on main made today
+        COUNT=$(git log origin/main --since="$TODAY 00:00" --until="$TODAY 23:59" --pretty=oneline | wc -l)
+
+        # Add 1 to get this run's version index
+        NEXT_COUNT=$((COUNT + 1))
+        PADDED=$(printf "%02d" "$NEXT_COUNT")
+
+        VERSION_STRING="${DATE_CODE}${PADDED}"
+        echo "VERSION_STRING=$VERSION_STRING" >> $GITHUB_OUTPUT
+        echo "$VERSION_STRING" > test_version.txt
 
     - name: Zip repository
       run: zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
