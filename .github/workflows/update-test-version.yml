@@ -13,15 +13,27 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # STEP 1: Get today's date and export to env
+    - name: Set Date Environment Variable
+      run: |
+        echo "TODAY_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+    # STEP 2: Restore daily run count cache
+    - name: Restore daily run count from cache
+      uses: actions/cache@v4
+      with:
+        path: .github/.daily_run_count
+        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
+
+    # STEP 3: Generate version string and increment daily count
     - name: Generate version string
       id: versioning
       run: |
         mkdir -p .github
-        TODAY=$(date +'%Y-%m-%d')
         DATE_CODE=$(date +'%y%m%d')
         COUNT_FILE=".github/.daily_run_count"
 
-        # Initialize or increment the count
+        # Read or initialize count
         RUN_NUM=0
         if [ -f "$COUNT_FILE" ]; then
           RUN_NUM=$(cat "$COUNT_FILE")
@@ -29,33 +41,29 @@ jobs:
         RUN_NUM=$((RUN_NUM + 1))
         echo "$RUN_NUM" > "$COUNT_FILE"
 
-        # Format run number and create version string
+        # Format and export version
         PADDED_RUN=$(printf "%02d" "$RUN_NUM")
         VERSION="${DATE_CODE}${PADDED_RUN}"
 
-        # Output for GitHub Actions
         echo "VERSION_STRING=$VERSION" >> $GITHUB_OUTPUT
-        echo "TODAY_DATE=$TODAY" >> $GITHUB_ENV
+        echo "Generated VERSION_STRING: $VERSION"
 
-    - name: Restore daily run count from cache
-      uses: actions/cache@v4
-      with:
-        path: .github/.daily_run_count
-        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
-
+    # STEP 4: Save version to file
     - name: Save test_version.txt
       run: echo "${{ steps.versioning.outputs.VERSION_STRING }}" > test_version.txt
 
+    # STEP 5: Zip the repo
     - name: Zip repository
       run: zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
 
+    # STEP 6: Upload the zip
     - name: Upload zipped artifact
       uses: actions/upload-artifact@v4
       with:
         name: dab-compliance-suite
         path: dab-compliance-suite.zip
 
-# to check
+    # STEP 7: Save updated run count back to cache
     - name: Save daily run count to cache
       uses: actions/cache/save@v4
       with:
