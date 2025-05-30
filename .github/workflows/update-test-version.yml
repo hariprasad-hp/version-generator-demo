@@ -13,25 +13,49 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Get current date and run number for versioning
-      id: version_info
+    - name: Restore daily run count from cache
+      id: cache_daily_run
+      uses: actions/cache@v4
+      with:
+        path: .github/.daily_run_count
+        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE || '' }}
+
+    - name: Generate version string
+      id: versioning
       run: |
+        mkdir -p .github
+        TODAY=$(date +'%Y-%m-%d')
         DATE_CODE=$(date +'%y%m%d')
-        RUN_NUMBER_PADDED=$(printf "%02d" $((GITHUB_RUN_NUMBER % 100)))
-        VERSION_STRING="${DATE_CODE}${RUN_NUMBER_PADDED}"
-        echo "VERSION_STRING=${VERSION_STRING}" >> $GITHUB_OUTPUT
+        COUNT_FILE=".github/.daily_run_count"
 
-    - name: Create test_version.txt
-      run: |
-        echo "${{ steps.version_info.outputs.VERSION_STRING }}" > test_version.txt
-        cat test_version.txt
+        RUN_NUM=0
+        if [ -f "$COUNT_FILE" ]; then
+          RUN_NUM=$(cat "$COUNT_FILE")
+        fi
+        RUN_NUM=$((RUN_NUM + 1))
+        printf "%s" "$RUN_NUM" > "$COUNT_FILE"
 
-    - name: Zip entire repository
-      run: |
-        zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
+        PADDED_RUN=$(printf "%02d" "$RUN_NUM")
+        VERSION="${DATE_CODE}${PADDED_RUN}"
 
-    - name: Upload zipped code as artifact
+        echo "VERSION_STRING=$VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION_STRING=$VERSION"
+        echo "$TODAY" >> $GITHUB_ENV  # Used for consistent cache key
+
+    - name: Save test_version.txt
+      run: echo "${{ steps.versioning.outputs.VERSION_STRING }}" > test_version.txt
+
+    - name: Zip repository
+      run: zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
+
+    - name: Upload zipped artifact
       uses: actions/upload-artifact@v4
       with:
         name: dab-compliance-suite
         path: dab-compliance-suite.zip
+
+    - name: Save daily run count to cache
+      uses: actions/cache/save@v4
+      with:
+        path: .github/.daily_run_count
+        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
