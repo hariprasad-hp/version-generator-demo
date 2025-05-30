@@ -8,46 +8,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read  # Needed for `gh` API access
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set Date Environment Variable
-      run: |
-        echo "TODAY_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+    - name: Install GitHub CLI
+      run: sudo apt-get install gh -y
 
-    - name: Restore daily run count from cache
-      uses: actions/cache@v4
-      with:
-        path: .github/.daily_run_count
-        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
+    - name: Authenticate GitHub CLI
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-    - name: Generate version string
-      id: versioning
+    - name: Get today's push count on main
+      id: push_count
       run: |
-        mkdir -p .github
+        TODAY=$(date +'%Y-%m-%d')
+        REPO="${{ github.repository }}"
+
+        COUNT=$(gh api repos/$REPO/commits \
+          -f sha=main \
+          -f since="${TODAY}T00:00:00Z" \
+          -f until="${TODAY}T23:59:59Z" \
+          --jq 'length')
+
+        INCREMENTED=$(($COUNT + 1))
+        PADDED_COUNT=$(printf "%02d" "$INCREMENTED")
+
         DATE_CODE=$(date +'%y%m%d')
-        COUNT_FILE=".github/.daily_run_count"
+        VERSION_STRING="${DATE_CODE}${PADDED_COUNT}"
 
-        # Read or initialize count
-        RUN_NUM=0
-        if [ -f "$COUNT_FILE" ]; then
-          RUN_NUM=$(cat "$COUNT_FILE")
-        fi
-        RUN_NUM=$((RUN_NUM + 1))
-        echo "$RUN_NUM" > "$COUNT_FILE"
-
-        # Format and export version
-        PADDED_RUN=$(printf "%02d" "$RUN_NUM")
-        VERSION="${DATE_CODE}${PADDED_RUN}"
-
-        echo "VERSION_STRING=$VERSION" >> $GITHUB_OUTPUT
-        echo "Generated VERSION_STRING: $VERSION"
-
-    - name: Save test_version.txt
-      run: echo "${{ steps.versioning.outputs.VERSION_STRING }}" > test_version.txt
-
+        echo "VERSION_STRING=$VERSION_STRING" >> $GITHUB_OUTPUT
+        echo "VERSION_STRING=$VERSION_STRING"
+        echo "$VERSION_STRING" > test_version.txt
 
     - name: Zip repository
       run: zip -r dab-compliance-suite.zip . -x ".git/*" -x "dab-compliance-suite.zip"
@@ -57,9 +50,9 @@ jobs:
       with:
         name: dab-compliance-suite
         path: dab-compliance-suite.zip
-#to check 
-    - name: Save daily run count to cache
-      uses: actions/cache/save@v4
+
+    - name: Upload test_version.txt
+      uses: actions/upload-artifact@v4
       with:
-        path: .github/.daily_run_count
-        key: ${{ runner.os }}-run-count-${{ github.ref_name }}-${{ env.TODAY_DATE }}
+        name: test-version
+        path: test_version.txt
