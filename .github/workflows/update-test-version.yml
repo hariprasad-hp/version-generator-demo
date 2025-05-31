@@ -43,8 +43,8 @@ jobs:
         name: dab-compliance-suite
         path: dab-compliance-suite.zip
 
-    - name: Upload test_version.txt
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-version
-        path: test_version.txt
+    #- name: Upload test_version.txt
+     # uses: actions/upload-artifact@v4
+     # with:
+      #  name: test-version
+      #  path: test_version.txt
