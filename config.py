@@ -2,8 +2,13 @@
 apps = dict(
     youtube = 'YouTube',
     netflix = 'Netflix',
-    amazon = 'PrimeVideo'
+    amazon = 'PrimeVideo',
+    sample_app = 'Sample_App',
+    sample_app1 = 'Sample_App1',
+    large_app = "Large_App",
+    sample_app_url = 'Sample_App_Url',
+    removable_app = 'Netflix' 
 )
 
 # Please set the voice asssitant you want to set here.
-va = 'AmazonAlexa'
+va = 'GoogleAssistant'

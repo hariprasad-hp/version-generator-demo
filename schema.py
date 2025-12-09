@@ -1,5 +1,6 @@
 from jsonschema import validate
 import jsons
+import dab_tester
 
 # DabRequest
 dab_request_schema = {
@@ -142,6 +143,87 @@ exit_application_response_schema = {
     },
     "required": ["status", "state"]
 }
+# InstallApplicationRequest
+install_application_request_schema = {
+    "type": "object",
+    "properties": {
+        "appId": {"type": "string"},
+        "force": {"type": "boolean"}
+    },
+    "required": ["appId"]
+}
+# InstallApplicationResponse
+install_application_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"},
+    },
+    "required": ["status"],
+}
+
+# UninstallApplicationRequest
+uninstall_application_request_schema = {
+    "type": "object",
+    "properties": {
+        "appId": {"type": "string"},
+        "force": {"type": "boolean"}
+    },
+    "required": ["appId"]
+}
+# UnnstallApplicationResponse
+uninstall_application_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"},
+    },
+    "required": ["status"],
+}
+# Clear_dataApplicationRequest
+clear_data_application_request_schema = {
+    "type": "object",
+    "properties": {
+        "appId": {"type": "string"},
+        "force": {"type": "boolean"}
+    },
+    "required": ["appId"]
+}
+# clear_dataApplicationResponse
+clear_data_application_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"},
+    },
+    "required": ["status"],
+}
+# InstallFromAppstoreApplicationRequest
+install_from_appstore_application_request_schema = {
+    "type": "object",
+    "properties": {
+        "appId": {"type": "string"},
+        "force": {"type": "boolean"}
+    },
+    "required": ["appId"]
+}
+# InstallFromAppstoreApplicationResponse
+install_from_appstore_application_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"},
+    },
+    "required": ["status"],
+}
 
 # Operation: device/info
 # DeviceInfoRequest
@@ -185,7 +267,7 @@ device_information_schema = {
         "displayType": {"type": "string"},
         "screenWidthPixels": {"type": "integer"},
         "screenHeightPixels": {"type": "integer"},
-        "uptimeSince": {"type": "integer"},
+        "uptimeSince": {"type": ["string", "integer"]},
         "deviceId": {"type": "string"}
     },
     "required": ["status", "manufacturer", "model", "serialNumber", "chipset", 
@@ -268,12 +350,50 @@ list_system_settings_schema = {
         "mute": {"type": "boolean"},
         "textToSpeech": {"type": "boolean"}
     },
+}
+
+list_system_settings_schema_20 = {
+    "allOf": [list_system_settings_schema],
     "required": ["status", "language", "outputResolution", "memc", "cec", "lowLatencyMode",
                  "matchContentFrameRate", "hdrOutputMode", "pictureMode", "audioOutputMode",
-                 "audioOutputSource", "videoInputSource", "audioVolume", "mute", "textToSpeech"]
+                 "audioOutputSource", "videoInputSource", "mute", "textToSpeech"]
+}
+
+list_system_settings_schema_21 = {
+    "allOf": [list_system_settings_schema],
+    "properties": {
+        "brightness": {
+            "type": "object",
+            "properties": {
+                "min": {"type": "integer"},
+                "max": {"type": "integer"}
+            },
+            "required": ["min", "max"]
+        },
+        "contrast": {
+            "type": "object",
+            "properties": {
+                "min": {"type": "integer"},
+                "max": {"type": "integer"}
+            },
+            "required": ["min", "max"]
+        },
+        "timeZone": {"type": "boolean"},
+        "screenSaver": {"type": "boolean"},
+        "screenSaverMinTimeout": {"type": "integer"},
+        "personalizedAds": {"type": "boolean"},
+        "highContrastText": {"type": "boolean"},
+        "identifierForAdvertising": {"type": "boolean"},
+    },
+    "required": ["status", "language", "outputResolution", "memc", "cec", "lowLatencyMode",
+                 "matchContentFrameRate", "hdrOutputMode", "pictureMode", "audioOutputMode",
+                 "audioOutputSource", "videoInputSource", "audioVolume", "mute", "textToSpeech",
+                 "timeZone", "screenSaver",
+                 "personalizedAds", "highContrastText", "identifierForAdvertising"]
 }
 
 system_settings_schema = {
+    "status": {"type": "integer"},
     "language": {"type": "string"},
     "outputResolution": output_resolution_schema,
     "memc": {"type": "boolean"},
@@ -288,6 +408,14 @@ system_settings_schema = {
     "audioVolume": {"type": "integer"},
     "mute": {"type": "boolean"},
     "textToSpeech": {"type": "boolean"},
+    "brightness": {"type": "integer"},
+    "contrast": {"type": "integer"},
+    "timeZone": {"type": "string"},
+    "screenSaver": {"type": "boolean"},
+    "screenSaverTimeout": {"type": "integer"},
+    "personalizedAds": {"type": "boolean"},
+    "highContrastText": {"type": "boolean"},
+    "identifierForAdvertising": {"type": "string"},
 }
 
 # Operation: system/settings/get
@@ -306,7 +434,7 @@ get_system_settings_response_schema = {
     },
     "then": {
         "properties": system_settings_schema,
-        "required": list(system_settings_schema.keys())
+        "additionalProperties": False
     },
     "else": {
         "properties": {
@@ -332,7 +460,8 @@ set_system_settings_response_schema = {
         }
     },
     "then": {
-        "properties": system_settings_schema
+        "properties": system_settings_schema,
+        "additionalProperties": False
     },
     "else": {
         "properties": {
@@ -669,6 +798,126 @@ version_response_schema = {
     "required": ["status", "versions"]
 }
 
+#StartLogCollectionRequest
+start_log_collection_request_schema = dab_request_schema
+
+#StartLogCollectionResponce
+start_log_collection_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"}
+    },
+    "required": ["status"]
+}
+
+#StopLogCollectionRequest
+stop_log_collection_request_schema = dab_request_schema
+
+#StopLogCollectionResponse
+stop_log_collection_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "logArchive": {"type": "string"},
+        "remainingChunks": {"type": "integer"}
+    },
+    "required": ["status", "logArchive", "remainingChunks"]
+}
+
+# Operation: system/power-mode/get
+# GetPowerModeRequest
+power_mode_get_request_schema = dab_request_schema
+
+# GetPowerModeResponse
+power_mode_get_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "powerMode": {"type": "string"}
+    },
+    "required": ["status", "powerMode"]
+}
+
+# Operation: system/power-mode/set
+# SetPowerModeRequest
+power_mode_set_request_schema = {
+    "type": "object",
+    "properties": {
+        "powerMode": {"type": "string"}
+    },
+    "required": ["powerMode"]
+}
+
+# SetPowerModeResponse
+power_mode_set_response_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": "string"},
+        "powerMode": {"type": "string"}
+    },
+    "required": ["status", "powerMode"]
+}
+
+# Operation: content/open
+# ContentOpenRequest
+content_open_request_schema = {
+    "type": "object",
+    "properties": {
+        "entryId": {"type": "string"}
+    },
+    "required": ["entryId"]
+}
+
+# ContentOpenResponse
+content_open_response_schema = dab_response_schema
+
+content_entries_schema = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "error": {"type": ["string", "null"]},
+        "entries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "entryId": {"type": "string"},
+                    "title": {"type": "string"},
+                    "appId": {"type": "string"},
+                    "poster": {"type": "string"},
+                    "categories": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["entryId", "title", "appId", "poster", "categories"]
+            }
+        },
+    },
+    "required": ["status", "entries"]
+}
+
+# Operation: content/recommendations
+# ContentRecommendationsRequest
+content_recommendations_request_schema = dab_request_schema
+# ContentRecommendationsResponse
+content_recommendations_response_schema = content_entries_schema
+
+# Operation: content/search
+# ContentSearchRequest
+content_search_request_schema = {
+    "type": "object",
+    "properties": {
+        "searchText": {"type": "string"}
+    },
+    "required": ["searchText"]
+}
+# ContentSearchResponse
+content_search_response_schema = content_entries_schema
 
 class dab_response_validator(object):
     def __init__(self):
@@ -703,6 +952,22 @@ class dab_response_validator(object):
         validate(instance=jsons.loads(response), schema=exit_application_response_schema)
 
     @staticmethod
+    def validate_install_application_response_schema(response):
+        validate(instance=jsons.loads(response), schema=install_application_response_schema)
+
+    @staticmethod
+    def validate_uninstall_application_response_schema(response):
+        validate(instance=jsons.loads(response), schema=uninstall_application_response_schema)
+
+    @staticmethod
+    def validate_clear_data_application_response_schema(response):
+        validate(instance=jsons.loads(response), schema=clear_data_application_response_schema)
+    
+    @staticmethod
+    def validate_install_from_appstore_application_response_schema(response):
+        validate(instance=jsons.loads(response), schema=install_from_appstore_application_response_schema)
+
+    @staticmethod
     def validate_device_information_schema(response):
         validate(instance=jsons.loads(response), schema=device_information_schema)
 
@@ -712,7 +977,11 @@ class dab_response_validator(object):
 
     @staticmethod
     def validate_list_system_settings_schema(response):
-        validate(instance=jsons.loads(response), schema=list_system_settings_schema)
+        dab_version = dab_tester.DAB_VERSION or "2.0"
+        if dab_version == "2.0":
+            validate(instance=jsons.loads(response), schema=list_system_settings_schema_20)
+        elif dab_version == "2.1":
+            validate(instance=jsons.loads(response), schema=list_system_settings_schema_21)
 
     @staticmethod
     def validate_get_system_settings_response_schema(response):
@@ -765,22 +1034,31 @@ class dab_response_validator(object):
     @staticmethod
     def validate_version_response_schema(response):
         validate(instance=jsons.loads(response), schema=version_response_schema)
-    
-    
 
+    @staticmethod
+    def validate_stop_log_collection_response_schema(response):
+        validate(instance=jsons.loads(response), schema=stop_log_collection_response_schema)
 
+    @staticmethod
+    def validate_start_log_collection_response_schema(response):
+        validate(instance=jsons.loads(response), schema=start_log_collection_response_schema)
 
+    @staticmethod
+    def validate_power_mode_set_response_schema(response):
+        validate(instance=jsons.loads(response), schema=power_mode_set_response_schema)
 
+    @staticmethod
+    def validate_power_mode_get_response_schema(response):
+        validate(instance=jsons.loads(response), schema=power_mode_get_response_schema)
 
+    @staticmethod
+    def validate_content_recommendations_response_schema(response):
+        validate(instance=jsons.loads(response), schema=content_recommendations_response_schema)
 
+    @staticmethod
+    def validate_content_search_response_schema(response):
+        validate(instance=jsons.loads(response), schema=content_search_response_schema)
 
-
-
-
-
-
-
-
-
-
-
+    @staticmethod
+    def validate_content_open_response_schema(response):
+        validate(instance=jsons.loads(response), schema=content_open_response_schema)

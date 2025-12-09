@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 @dataclass
 class TestResult:
@@ -15,4 +15,3 @@ class TestResult:
 class TestSuite:
     test_result_list: List[TestResult]
     suite_name: str
-    version: Optional[str] = None
