@@ -18,14 +18,14 @@ jobs:
             os: windows
             arch: x64
             asset_name: dab_suite_windows_x64.exe
-            sep: ";"  # Windows uses semicolon for add-data
+            sep: ";"  # Windows uses semicolon separator
 
           # --- LINUX (x64) ---
           - runner: ubuntu-20.04
             os: linux
             arch: x64
             asset_name: dab_suite_linux_x64
-            sep: ":"  # Linux uses colon
+            sep: ":"  # Linux uses colon separator
 
           # --- MACOS (Intel x64) ---
           - runner: macos-13
@@ -47,7 +47,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10' 
+        python-version: '3.10'
         cache: 'pip'
 
     - name: Install Dependencies
@@ -57,8 +57,8 @@ jobs:
         pip install -r requirements.txt
 
     - name: Build Binary
+      shell: bash   # <--- THE FIX: Forces Bash on Windows to avoid PowerShell errors
       run: |
-        # We use dynamic variables from the matrix for separator and name
         pyinstaller --noconfirm --onefile --clean --console \
           --add-data "valid_dab_topics.json${{ matrix.sep }}." \
           --add-data "config${{ matrix.sep }}config" \
